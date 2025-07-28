@@ -1,0 +1,89 @@
+مسیر بهینه برای جاوااسکریپت، React، Next.js و TypeScript
+
+با توجه به تجربه‌ات در حد Junior، پیشنهاد می‌کنم برخی مباحث پایه را فقط مرور کنی و انرژی‌ت را روی موضوعات کلیدی و پیچیده‌تر متمرکز کنی. در ادامه تقسیم‌بندی مباحث به دو بخش «مرور سریع» و «تعمق عمیق» را می‌بینی.
+
+---
+
+## مباحثی که می‌توانی سریع‌تر مرور کنی
+
+- **گرامر پایه و سینتکس**  
+  – انواع داده، عملگرها، ساختارهای کنترلی (if/loop)  
+  – تعریف تابع (declaration vs expression)  
+  – ES6+: destructuring، spread/rest، template literals  
+
+- **APIهای ساده مرورگر و DOM**  
+  – `document.querySelector()`، `addEventListener`  
+  – basics of Fetch API  
+
+- **React Fundamentals**  
+  – کامپوننت‌های تابعی با useState و useEffect  
+  – props و basic lifting state  
+  – روتر ساده (react-router یا Next.js pages router)  
+
+- **Next.js Basics**  
+  – file-system routing  
+  – getStaticProps و getServerSideProps اوریجینال  
+  – نحوهٔ استقرار ساده در Vercel  
+
+- **TypeScript Foundation**  
+  – انواع اولیه (`string`, `number`, `boolean`)  
+  – interface vs type alias  
+  – آرایه، تاپل، enumهای پایه  
+
+---
+
+## مباحث برای تعمق عمیق و اولویت بالا
+
+### ۱. Core JavaScript Internals  
+- **Event Loop & Concurrency**  
+  – تفاوت Macrotasks vs Microtasks  
+  – چرخهٔ اجرا، رندر و Web Worker  
+- **Scope & Closure**  
+  – lexical environment، memory leak prevention  
+- **Prototype & Inheritance**  
+  – [[Prototype]] lookup، performance implications  
+- **Memory Management & GC**  
+  – heap vs stack، نشتی حافظه و پروفایلینگ  
+
+### ۲. Advanced TypeScript  
+- Generics پیشرفته و Constraints  
+- Conditional & Mapped Types  
+- Declaration Files (`.d.ts`)  
+- Utility Types و الگوهای type-safe  
+- راهبردهای gradual migration و strict mode  
+
+### ۳. طراحی و معماری با Design Patterns  
+- **Behavioral**: Observer/ Pub-Sub برای مدیریت رویداد  
+- **Structural**: Facade/Decorator در React (HOC, custom hooks)  
+- **Creational**: Factory / Singleton برای سرویس‌ها و config  
+- **State Machines**: XState یا useReducer برای فرم‌ها و مراحل پیچیده  
+
+### ۴. React پیشرفته  
+- **Concurrent Features** (React 18+):  
+  – Suspense, Transitions, Streaming SSR  
+- **Server Components & App Router** (Next 13+):  
+  – تفکیک Server vs Client components  
+- **Performance Tuning**:  
+  – React.memo, useMemo/useCallback  
+  – list virtualization (react-window)  
+- **Testing**:  
+  – Unit tests (react-testing-library)  
+  – Integration/E2E (Cypress/Playwright)  
+
+### ۵. Next.js حرفه‌ای  
+- **Incremental Static Regeneration (ISR)**  
+- **Edge Functions & Middleware**  
+- **Internationalization (i18n)**  
+- **Custom bundling & Code Splitting**  
+- **Preview Mode & On-Demand ISR**  
+- **بهینه‌سازی Assetها**: Image, Font optimization  
+
+### ۶. ابزارها و فرایندها  
+- **CI/CD Pipelines** (GitHub Actions, Vercel)  
+- **Linting & Formatting** (ESLint, Prettier)  
+- **Bundlers Modern** (Vite, Turbopack)  
+- **Monorepo** (Turborepo, pnpm Workspaces)  
+
+---
+
+با این رویکرد، در مدت کوتاه مباحث پایه را تثبیت می‌کنی و مهم‌ترین مهارت‌های سطح Senior (درک عمیق زبان، طراحی معماری، بهینه‌سازی و تایپ‌سیف بودن) را پرورش می‌دهی. موفق باشی!  

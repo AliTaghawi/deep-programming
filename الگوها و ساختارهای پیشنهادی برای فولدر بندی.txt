@@ -1,0 +1,215 @@
+# الگوها و ساختارهای پیشنهادی برای فولدر‌بندی پروژه‌های JS/React/Next.js
+
+در این راهنما چند الگوی متداول فولدر‌بندی را بررسی می‌کنیم، با مزایا، معایب و مثال درخت شاخه‌ای (directory tree) برای هر یک. می‌توانید بر اساس اندازه و دامنهٔ پروژه، ساختار مناسب را انتخاب یا ترکیب کنید.
+
+---
+
+## ۱. ساختار مبتنی بر نوع فایل (Layer-based)
+
+هر نوع منطق در یک فولدر جدا:
+
+```
+src/
+├─ components/      # همهٔ کامپوننت‌های reusable
+├─ pages/           # صفحات (React Router یا Next.js pages/)
+├─ services/        # API calls, SDK wrappers
+├─ store/           # Redux/MobX/Zustand setup
+├─ hooks/           # custom React hooks
+├─ utils/           # توابع کمکی و ابزارها
+├─ assets/          # تصاویر، فونت، فایل‌های استاتیک
+├─ styles/          # CSS/SCSS/Styled Components themes
+└─ types/           # تایپ‌تعاریف (TypeScript)
+```
+
+- مزیت: واضح و آشنا برای همه  
+- معایب: زمانی که پروژه بزرگ می‌شود، باز کردن یک feature دشوار است  
+
+---
+
+## ۲. ساختار مبتنی بر Feature یا Domain
+
+هر feature (دامنهٔ کاری) فولدری مستقل دارد:
+
+```
+src/
+└─ features/
+   ├─ auth/
+   │  ├─ components/
+   │  ├─ hooks/
+   │  ├─ store/       # slice یا reducer مربوط به auth
+   │  ├─ api.js
+   │  └─ auth.routes.js
+   ├─ dashboard/
+   │  ├─ components/
+   │  ├─ dashboard.page.js
+   │  └─ hooks/
+   └─ profile/
+      ├─ components/
+      ├─ profile.service.js
+      └─ profile.slice.js
+```
+
+- مزیت: تمام فایل‌های مرتبط به یک feature کنار هم هستند → نگهداری و حذف یا جابه‌جایی آسان  
+- معایب: برای پروژه‌های خیلی کوچک ممکن است Overhead باشد  
+
+---
+
+## ۳. الگوی Atomic Design 
+
+تقسیم کامپوننت‌ها به پنج سطح: Atoms, Molecules, Organisms, Templates, Pages
+
+```
+src/
+├─ components/
+│  ├─ atoms/        # دکمه، اینپوت، آیکون
+│  ├─ molecules/    # ترکیب چند atom (مثلاً InputGroup)
+│  ├─ organisms/    # بلوک‌های بزرگ‌تر (Navbar, Footer)
+│  ├─ templates/    # اسکلتِ صفحه (چیدمان بخش‌ها)
+│  └─ pages/        # داده‌گذاری روی template
+├─ hooks/
+├─ services/
+└─ styles/
+```
+
+- مزیت: واضح‌ترین جداسازی برای UI/UX  
+- معایب: در پروژه‌های بدون طراح اختصاصی می‌تواند پیچیده شود  
+
+---
+
+## ۴. فولدر‌بندی مخصوص Next.js (with `app/` directory)
+
+با ساختار App Router در Next 13+:
+
+```
+src/
+└─ app/
+   ├─ layout.js          # لایهٔ مشترک تمام صفحات
+   ├─ page.js            # صفحهٔ ریشه‌ای (/)
+   ├─ dashboard/
+   │  ├─ page.js         # /dashboard
+   │  └─ settings/
+   │     └─ page.js      # /dashboard/settings
+   ├─ components/        # کامپوننت‌های مشترک داخل app/
+   ├─ hooks/
+   ├─ lib/               # تابع‌های کمکی برای data fetching
+   └─ styles/            # CSS Modules یا Styled JSX
+pages/                    # فقط اگر هنوز از pages router استفاده می‌کنید
+public/
+next.config.js
+```
+
+یا با ساختار Pages Router:
+
+```
+src/
+├─ pages/
+│  ├─ _app.js
+│  ├─ api/
+│  ├─ index.js
+│  └─ dashboard/
+│     └─ index.js
+├─ components/
+├─ lib/                  # abstraction برای داده و config
+├─ hooks/
+├─ store/
+├─ styles/
+└─ public/
+```
+
+- نکته: در App Router، فولدر `app/` خودش route تولید می‌کند و می‌توانید layout‌های Nested بسازید.  
+- مزیت: همگام با متدولوژی Next.js و امکانات SSR/SSG  
+
+---
+
+## ۵. توصیه‌ها و بهترین تمرین‌ها
+
+- **Path Aliases**  
+  در `jsconfig.json` یا `tsconfig.json` تعریف کنید (`@/components`, `@/features/auth`).
+
+- **Co-location**  
+  وقتی کامپوننت خاصی state یا hook اختصاصی دارد، فایل‌های test و style را کنار آن نگه دارید:  
+  ```
+  features/auth/LoginForm/
+  ├─ LoginForm.jsx
+  ├─ LoginForm.module.css
+  └─ LoginForm.test.jsx
+  ```
+
+- **تخصیص مسئولیت**  
+  - کامپوننت‌های dumb (presentational) و smart (container) جدا نگه دارید.  
+  - لایهٔ API/service را از view و state management تفکیک کنید.
+
+- **تسمیه‌گذاری واضح**  
+  - فولدرها و فایل‌ها باید مفهوم و مسئولیت‌شان روشن باشد (مثلاً `useAuth` به‌جای `authHook`).
+
+- **مقیاس‌پذیری**  
+  - برای پروژهٔ بزرگ از feature-based یا monorepo (Nx/Turborepo) استفاده کنید.  
+  - در طول زمان اگر فولدری سنگین شد، می‌توانید آن را به یک پکیج جداگانه منتقل کنید.
+
+---
+
+با ترکیب این الگوها و رعایت Co-location و Path Alias، هم خوانایی کد بالا می‌رود و هم مقیاس‌پذیری و نگهداری پروژه در سطوح بزرگ به سادگی میسر خواهد شد.
+
+
+
+------------------////////////////خوب الان اینا دیزاین پترن حساب میشن؟////////////////--------------------
+
+# آیا ساختارهای فولدر‌بندی الگوهای طراحی (Design Patterns) هستند؟
+
+خیر؛ آنچه برای فولدر‌بندی پروژه بیان کردیم، در دستهٔ **الگوهای معماری و سازمانی** قرار می‌گیرد، نه الگوهای کلاسیک طراحی نرم‌افزار (Creational/Structural/Behavioral Patterns) مثل Singleton یا Observer.  
+الگوهای فولدر‌بندی صرفاً نحوهٔ سازماندهی و تقسیم کد در سطح پروژه را مشخص می‌کنند تا:
+
+- قابلیت نگهداری (Maintainability)  
+- مقیاس‌پذیری (Scalability)  
+- وضوح (Clarity)  
+
+را بهبود دهند.
+
+---
+
+## تفاوت کلی
+
+- **Design Patterns**  
+  – راهکارهای سطح کد برای حل مسائل رایج (مثلاً چطور یک سلسله مراتب پروتوتایپ بسازیم، یا چطور الگوریتم‌ها را وابسته به شرایط انتخاب کنیم).  
+- **Architecture / Organization Patterns**  
+  – چیدمان ماژول‌ها، پوشه‌ها، لایه‌ها و سرویس‌ها در سطح کلان پروژه تا گردش کار توسعه و نگهداری ساده شود.
+
+---
+
+## الگوهای معماری رایج در فولدر‌بندی
+
+۱. Layer-based (لایه‌ای)  
+   - تقسیم بر اساس نقش:  
+     `components/`, `services/`, `store/`, `utils/`  
+   - مناسب پروژه‌های متوسط که هر لایه وظایف مشخصی دارد.  
+
+۲. Feature-based (مبتنی بر قابلیت)  
+   - پوشه‌های جداگانه برای هر feature یا ماژول تجاری:  
+     ```
+     features/
+       ├─ auth/
+       ├─ dashboard/
+       └─ profile/
+     ```  
+   - هر Feature شامل کامپوننت، سرویس، استیت و تست‌های خودش است.  
+
+۳. Atomic Design  
+   - تقسیم UI به سطوح:  
+     `atoms/`, `molecules/`, `organisms/`, `templates/`, `pages/`  
+   - تمرکز روی ساختار و reusability کامپوننت‌ها  
+
+۴. Monorepo  
+   - نگهداری چند پکیج (وب، موبایل، کتابخانه) در یک مخزن با ابزارهایی مثل Turborepo یا Lerna  
+   - اشتراک کد و هماهنگی نسخه‌ها آسان‌تر می‌شود  
+
+۵. Microfrontend (سطح پیشرفته)  
+   - شکستن اپلیکیشن به چند برنامهٔ مستقل که با هم در کلاینت ترکیب می‌شوند  
+   - هر بخش (مثلاً داشبورد، فروشگاه، بلاگ) در مخزن و Deploy جدا  
+
+---
+
+## نتیجه‌گیری
+
+- فولدر‌بندی‌ها **الگوهای معماری** پروژه هستند، نه الگوهای کلاسیک طراحی (Design Patterns).  
+- برای هر پروژه بر حسب اندازه، تیم و نیازمندی‌ها، می‌توانی یکی یا ترکیبی از این الگوها را به کار ببری.  
+- الگوهای طراحی (Singleton، Observer، Strategy و…) در سطح پیاده‌سازی توابع و کلاس‌ها کاربرد دارند و در کنار ساختار فولدر می‌توانند کیفیت کد را بیشتر کنند.
