@@ -1,0 +1,122 @@
+سوال شماره ۶ (همون 5 هست)
+
+توضیح بده تفاوت `process.nextTick()` و `setImmediate()` در Node.js چیست؟  
+در پاسخ‌ات حتما به این نکات بپرداز:  
+
+- هرکدام در چه فازی از Event Loop اجرا می‌شوند  
+- ترتیب (ordering) و اولویت اجرا  
+- مواردِ کاربرد متداول هرکدام  
+- چالش‌ها و نکات مربوط به کارایی و مدیریت خطا  
+
+وقتی جواب دادی، من درصد عمق و دقت پاسخ‌ت رو میدم، نقاط قوت و ضعف‌ش رو اشاره می‌کنم و بعد پاسخ مرجع رو در اختیارت می‌گذارم. آماده‌ای؟
+
+
+-/////////////////////////////////////
+
+# تفاوت process.nextTick() و setImmediate() در Node.js
+
+وقتی داریم مسیر اجرای آسنکرون در Node.js را می‌بینیم، باید بدانیم هر کدام از این دو تابع چه «جایگاهی» در Event Loop دارند و چطور اولویت‌بندی می‌شوند.
+
+---
+
+## ساختار سادهٔ Event Loop در Node.js
+
+1. timers  
+2. pending callbacks  
+3. idle, prepare  
+4. **poll**  
+5. **check**  
+6. close callbacks  
+
+- تابع‌های `setTimeout` و `setInterval` در فاز **timers** اجرا می‌شوند.  
+- `setImmediate()` در فاز **check** اجرا می‌شود.  
+- `process.nextTick()` درواقع جزو هیچ‌یک از این فازها نیست و به‌عنوان یک میکروتسک (microtask) بلافاصله پس از اتمام کد جاری اجرا می‌شود، پیش از اینکه Event Loop وارد فاز بعدی شود.
+
+---
+
+## ترتیب و اولویت اجرا
+
+1. اجرای کد سینکرون فعلی (Call Stack)  
+2. اجرای تمام callbackهای **`process.nextTick()`**  
+3. اجرای callbackهای Promise (`.then`/`catch`)  
+4. ورود به فاز **timers** → اجرای `setTimeout`/`setInterval`  
+5. فاز **poll** → اجرا I/O callbacks  
+6. فاز **check** → اجرای **`setImmediate()`**  
+
+> نکته: در هر دور از Event Loop، `nextTick` صف جداگانه‌ای دارد و حتی می‌تواند Event Loop را «گرسنه» (starve) کند اگر مداوم callback ثبت کنید.
+
+---
+
+## موارد کاربرد
+
+process.nextTick()  
+- اجرای فوری کد پس از پایان فانکشن فعلی  
+- توسعه ماژول‌هایی که نیاز به 초기‌سازی سریع دارند  
+- شکستن بازگشت (recursion) عمیق تا از stack overflow جلوگیری شود  
+
+setImmediate()  
+- برنامه‌ریزی callback بعد از اجرای تمام I/O فعلی  
+- ترجیح زمانی که می‌خواهید پس از poll Phase اجرا شود  
+- جایگزین `setTimeout(fn, 0)` با دقت و اولویت بهتر  
+
+---
+
+## مثال کد
+
+```javascript
+console.log('start');
+
+process.nextTick(() => {
+  console.log('nextTick callback');
+});
+
+setImmediate(() => {
+  console.log('setImmediate callback');
+});
+
+Promise.resolve()
+  .then(() => console.log('promise callback'));
+
+console.log('end');
+```
+
+خروجی معمول:
+```
+start
+end
+nextTick callback
+promise callback
+setImmediate callback
+```
+
+---
+
+## چالش‌ها و نکات مربوط به کارایی
+
+- اگر در هر callback از `process.nextTick` مجدداً `nextTick` دیگری ثبت کنید، ممکن است هیچ‌وقت وارد فازهای I/O یا check نشوید (starvation).  
+- `nextTick` برای کارهای خیلی کوتاه و درون ماژول توصیه می‌شود؛ برای deferral طولانی‌تر یا جلوگیری از بلوکه‌شدن I/O از `setImmediate` یا Promise استفاده کنید.  
+- مدیریت خطا  
+  - هر خطا در callbackهای `nextTick` یا `setImmediate` اگر catch نشود، کل پروسس را کرش می‌کند. پس حتماً از try/catch یا promise rejection handlers بهره ببرید.
+
+---
+
+## جدول مقایسه
+
+| ویژگی                      | process.nextTick()                | setImmediate()                |
+|----------------------------|-----------------------------------|-------------------------------|
+| صف اجرا                    | Microtask (nextTick queue)        | Macro-task (check phase)      |
+| زمان اجرا                  | بلافاصله پس از Call Stack        | بعد از poll، در فاز check     |
+| امکان starvation           | بله (اگر مداوم push شود)         | خیر (فاز مشخص دارد)          |
+| جایگزین برای               | –                                 | معادل دقیق `setTimeout(fn, 0)`|
+| مناسب برای                | کارهای کوتاه و حیاتی              | deferral پس از I/O            |
+
+---
+
+## ادامه مسیر یادگیری
+
+- بررسی نحوه تعامل `nextTick` با صف‌های Promise در Node.js v15+  
+- مقایسه با `queueMicrotask()` در مرورگر  
+- استفاده از ابزارهایی مثل `clinic.js` برای پروفایل Event Loop  
+- تاثیر این توابع بر latency و throughput در سرورهای real-time  
+
+اگر دوست داری روی مثال‌های عملی، پیاده‌سازی flow کنترل یا troubleshooting در پروژه‌های بزرگ صحبت کنیم، بگو تا عمیق‌تر بریم!

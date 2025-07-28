@@ -1,0 +1,58 @@
+# process.nextTick() چیست؟
+
+هرگاه در Node.js تابع `process.nextTick()` را صدا بزنید، callback شما بلافاصله پس از پایان اجرای کد سینکرون جاری و پیش از ورود به هر فاز دیگر Event Loop اجرا می‌شود.  
+
+- این callback در صفی جداگانه (nextTick queue) نگهداری می‌شود.  
+- حتی اگر ماکروتسک‌های دیگری منتظر اجرا باشند، اجرای `nextTick`‌ها اولویت دارد.  
+- مراقب باشید که افزودن مداوم callback به این صف می‌تواند مانع از پردازش دیگر فازهای Event Loop شود (starvation).
+
+---
+
+# setImmediate() چیست؟
+
+تابع `setImmediate()` در Node.js یک callback را در فاز **check** از Event Loop زمان‌بندی می‌کند.  
+
+- این callback بعد از فاز **poll** (I/O) و پیش از فاز **close callbacks** اجرا می‌شود.  
+- ترتیب اجرا با `setTimeout(fn, 0)` مشابه است، اما دقت زمانی و اولویت بهتری دارد.  
+- مناسب وقتی است که می‌خواهید اجرای کد را پس از برگرداندن کنترل به Event Loop و اتمام I/O کنونی به تعویق بیندازید.
+
+---
+
+# معادل‌ها در فرانت‌اند
+
+در مرورگرها تابعی مثل `process.nextTick` یا `setImmediate` نداریم، اما مکانیسم‌های زیر برای deferral و صف‌بندی تسک‌ها استفاده می‌شوند:
+
+- `Promise.resolve().then(fn)`  
+  • ثبت callback در **Microtask Queue**.  
+- `queueMicrotask(fn)`  
+  • مشابه `Promise.then` برای میکروتسک بدون ساخت Promise جدید.  
+- `setTimeout(fn, 0)`  
+  • ثبت callback در **Macro-task Queue** (Timers phase).  
+- `MessageChannel` یا `postMessage`  
+  • راهکارهای دیگر برای صف‌بندی فوری callbackها.  
+
+---
+
+# Deferral یعنی چی؟
+
+Deferral به معنی «به تأخیر انداختن» یا «تاخیردار کردن» اجرای یک تکه کد تا زمان یا شرایط بعدی است.  
+
+- با deferral می‌توانید از بلوکه‌کردن جریان اصلی جلوگیری کنید.  
+- انواع deferral:  
+  - میکروتسک (microtask) که سریع و با اولویت بالا اجرا می‌شود  
+  - ماکروتسک (macrotask) که پس از میکروتسک‌ها و در فازهای بعدی Event Loop اجرا می‌شود  
+
+---
+
+## جدول مقایسه‌
+
+| ویژگی                   | process.nextTick()    | setImmediate()          | Promise.then / queueMicrotask | setTimeout(fn,0)      |
+|--------------------------|-----------------------|-------------------------|-------------------------------|-----------------------|
+| نوع تسک                  | میکروتسک (Node-only)  | ماکروتسک (check phase)  | میکروتسک (browser/Node)       | ماکروتسک (timers)     |
+| زمان اجرا                | فوری پس از Call Stack | بعد از poll، در فاز check | پس از Call Stack، قبل ماکروتسک | بعد از Timers phase   |
+| اولویت نسبت به سایر تسک‌ها| بالاترین              | متوسط                  | بالا                           | پایین‌تر             |
+| معادل در مرورگر         | —                     | —                       | `Promise.resolve().then` یا `queueMicrotask` | `setTimeout(fn,0)`    |
+
+---
+
+آیا می‌خواهی با مثال تعاملی ببینیم چطور deferral در مرورگر vs Node.js کار می‌کند یا به جزئیات بیشتری درباره Microtask و Macrotask در فرانت‌اند بپردازیم؟

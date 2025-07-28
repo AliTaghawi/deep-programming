@@ -1,0 +1,66 @@
+# Lexical Environment و Variable Environment چیستند؟
+
+هر بار که یک تابع یا بلوک کد اجرا می‌شود، جاوااسکریپت یک ساختار درونی به‌نام Lexical Environment می‌سازد تا متغیرها و عملکرد دسترسی به آن‌ها را مدیریت کند.
+
+## ساختار کلی یک Lexical Environment
+
+- Environment Record  
+  نگهدارندهٔ مقادیر متغیرها، پارامترها و تابع‌های محلی  
+- Reference to Outer Environment  
+  ارجاع به محیط والد (جایی که تابع در آن تعریف شده)؛ این ارجاع زنجیرهٔ scope را می‌سازد  
+
+```javascript
+function outer(a) {
+  const x = 10;
+  function inner(b) {
+    const y = 20;
+    console.log(a, x, b, y);
+  }
+  return inner;
+}
+```
+
+در این مثال:  
+1. اجرای `outer` محیطی می‌سازد با `a, x`.  
+2. درون‌ آن، اجرای `inner` یک محیط جدید می‌سازد که علاوه بر `b, y`، ارجاع به محیط `outer` را دارد.  
+3. `inner` به متغیرهای `a` و `x` در محیط والد دسترسی دارد چون‌ Lexical Environment آن‌ها را در زنجیره یافته است.
+
+## Variable Environment کی و کجاست؟
+
+Variable Environment زیرمجموعه‌ای از همان Lexical Environment است که به‌طور خاص متغیرهای قابل تغییر (`let`, `const`, `var`) و پارامترهای تابع را نگه می‌دارد.  
+- هر تابع جدید یک Variable Environment جدید می‌سازد.  
+- برای بلوک‌های `let`/`const` هم یک محیط بلوکی جداگانه داریم.
+
+---
+
+# Memory Leak چیست؟
+
+Memory Leak‌ وقتی اتفاق می‌افتد که اشیاء یا منابع حافظه در برنامه نگه داشته شوند در حالی که دیگر هرگز به آن‌ها نیاز نیست، و به دلیل ارجاعات زنده هرگز توسط Garbage Collector آزاد نمی‌شوند.
+
+## مثال‌ها و سناریوهای شایع
+
+- نگه‌داشتن ارجاع به یک المان DOM پس از حذف آن از صفحه  
+- ثبت listener بدون پاک‌کردنش هنگام اتمام کار  
+- استفادهٔ نادرست از closure که محیط بزرگی را زنده نگه می‌دارد  
+- ساختارهای دادهٔ طولانی‌مدت (مثلا آرایه یا Map) که هرگز خالی یا آزاد نشده‌اند  
+
+```javascript
+const handlers = [];
+function register(el) {
+  const clickHandler = () => console.log(el.id);
+  el.addEventListener('click', clickHandler);
+  handlers.push({ el, clickHandler }); // ارجاع اضافه می‌شود ولی پاک نمی‌گردد
+}
+// حتی بعد از حذف el از DOM، handlers مانع از آزاد شدن حافظه‌اش می‌شود
+```
+
+## چگونه جلوگیری کنیم؟
+
+- پاک‌کردن رویدادها (`removeEventListener`)  
+- خالی‌کردن آرایه یا ساختارهای داده پس از استفاده  
+- شکستن ارجاعات در closure با انتساب `null`  
+- استفاده از WeakMap یا WeakSet برای نگه‌داشتن داده‌های کم‌اهمیت  
+
+---
+
+آیا دوست داری مثال عملی‌تری از پروفایلینگ حافظه ببینیم یا با یک ابزار خاص (مثل Chrome DevTools) چگونگی پیدا کردن Memory Leak را مرور کنیم؟

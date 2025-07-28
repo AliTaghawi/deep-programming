@@ -1,0 +1,109 @@
+# سوال شماره ۱۰
+
+توضیح بده تفاوت CommonJS (مثل `require`/`module.exports`) و ES Modules (`import`/`export`) در جاوااسکریپت چیست. در پاسخ‌ات حتماً به این نکات بپرداز:
+
+- سازوکار بارگذاری (synchronous vs asynchronous loading)  
+- نحوه‌ی ارجاع به همان شیء (singleton behavior)  
+- نحوه‌ی Bundling و درخت-تراوری (tree-shaking)  
+- میزان پشتیبانی در مرورگر و Node.js و نکات مربوط به پسوند فایل‌ها  
+- تفاوت‌ در نحوه‌ی ارث‌بری (circular dependencies) و رفع آن  
+- نکات کاربردی در استفادهٔ ترکیبی (interop) و بهترین الگوها  
+
+آماده‌ای برای پاسخ؟
+
+
+---//////////////////////////////////////
+
+# ارزیابی پاسخ شما برای سوال دهم: CommonJS vs ES Modules
+
+نمره (عمق و دقت): 60%
+
+نقاط قوت  
+- تشخیص بارگذاری همگام در CommonJS و ناهمگام (براساس import) در ES Modules  
+- اشاره به خروجی‌های `module.exports` و `export`/`import` (default و named)  
+- بیان نکتهٔ فقدان آنالیز ایستا (static analysis) و تأثیرش روی tree-shaking در CommonJS  
+- اشاره به قابلیت hoisting در ES Modules و dynamic `import()`  
+- ذکر پسوندهای متداول و تنظیم `type` در `package.json`  
+
+نقاط ضعف  
+- نپرداختن به مفهوم **live bindings** در ES Modules (تغییرات دینامیک متغیرهای صادرشده)  
+- توضیح ناکافی در مورد **کشینگ (singleton behavior)** و اینکه هر ماژول یک‌بار اجرا می‌شود  
+- توضیح سطحی دربارهٔ **Circular Dependencies** در هر دو سیستم و تفاوت در رفتار  
+- فقدان مثال‌های کد واقعی برای نشان دادن تفاوت  
+- کمبود نکات عملی دربارهٔ **Interop** (نحوه‌ی ترکیب CJS و ESM) و بهترین الگوها  
+
+---
+
+# پاسخ مرجع: تفاوت CommonJS و ES Modules
+
+## ۱. سازوکار بارگذاری  
+- CommonJS  
+  - `require()` در زمان اجرا (runtime) عمل می‌کند و **همگام** است.  
+  - هر بار که `require` صدا زده شود، ابتدا از کش باز می‌گردد؛ اگر بار اول باشد، ماژول را اجرا و سپس خروجی را ذخیره می‌کند.  
+- ES Modules  
+  - ساختار `import`/`export` **ایستا** است و توسط باندلر یا موتور JS پیش از اجرا تحلیل می‌شود.  
+  - در مرورگرها با `<script type="module">`، بارگذاری ناهمگام (async) است.  
+  - در Node.js جدید، `.mjs` یا با `"type": "module"` در `package.json`، سینک‌رانایز ولی با قابلیت بارگذاری ایستا.
+
+## ۲. Singleton Behavior (Caching)  
+- CommonJS  
+  - یک ماژول تنها یک‌بار اجرا می‌شود و نتیجه‌ی `module.exports` در **cache** نگه داشته می‌شود.  
+  - همه‌ی `require`های بعدی همان شیء را برمی‌گردانند.  
+- ES Modules  
+  - هر ماژول نیز تنها یک‌بار اجرا می‌شود و **live bindings** برای متغیرهای صادرشده فراهم می‌کند.  
+  - اگر مقدارِ صادرشده در مبدأ تغییر کند، همه‌ی واردکنندگان (importers) آن تغییر را می‌بینند.
+
+## ۳. Tree-Shaking و Bundling  
+- CommonJS  
+  - به‌خاطر فراخوانی‌های داینامیک (`require(someVar)`) و ساختار runtime، آنالیز ایستا مشکل است.  
+  - اکثر باندلرها نمی‌توانند به‌خوبی کد غیر‌استفاده‌شده را حذف کنند.  
+- ES Modules  
+  - ساختار استاتیک، امکان **درخت‌تراوری (tree-shaking)** و حذف کدهای بلااستفاده را فراهم می‌کند.  
+  - `export`های named امکان حذف دقیق متدها/توابع بلااستفاده را می‌دهد.
+
+## ۴. پسوند فایل و پشتیبانی  
+- CommonJS  
+  - پیش‌فرض در Node.js برای فایل‌های `.js` (مگر اینکه `type: "module"` تعریف شود).  
+  - همچنین `.cjs` صریحاً CommonJS است.  
+- ES Modules  
+  - در Node.js: `.mjs` یا با `package.json` ست‌شده روی `"type": "module"`.  
+  - در مرورگر: `<script type="module">` و بدون نیاز به پسوند خاص.
+
+## ۵. Circular Dependencies  
+- CommonJS  
+  - وقتی دو ماژول یکدیگر را require می‌کنند، یکی از آن‌ها ممکن است **partial exports** بدهد (محتویات ناقص).  
+- ES Modules  
+  - به‌واسطه‌ی live bindings، ماژول‌ها تا پایان ارزیابی بارگذاری می‌شوند و سپس متغیرها در واردکنندگان به‌روز می‌شوند، بنابراین کمتر به خطای فقدان مقدار می‌انجامد.
+
+## ۶. Interop (ترکیب CJS و ESM)  
+- در Node.js  
+  - `import pkg from './cjs-module.cjs'` (با استفاده از `createRequire` در موارد خاص)  
+  - `const esm = await import('./esm-module.mjs')`  
+- بهترین الگوها  
+  - در یک پروژه یا همه CommonJS بنویسید، یا همه ES Modules؛ ترکیب کمتر توصیه می‌شود.  
+  - اگر نیاز به کتابخانه‌ی خارجی CJS دارید، از dynamic `import()` یا `createRequire` استفاده کنید.
+
+---
+
+## مثال خلاصه
+
+```javascript
+// CommonJS (file: math.cjs)
+exports.add = (a, b) => a + b;
+
+// ES Module (file: main.mjs)
+import { add } from './math.cjs'; // در Node.js با createRequire
+console.log(add(2, 3)); // 5
+```
+
+```html
+<!-- در مرورگر -->
+<script type="module">
+  import { add } from './math.js';
+  console.log(add(2, 3));
+</script>
+```
+
+---
+
+حالا که تفاوت‌ها شفاف شدند، اگر مایل باشی مثالی عملی با ابزارهای باندلینگ (Webpack/Rollup) یا جزئیات بیشتری از circular dependency profiling ببینیم، خبر بده!

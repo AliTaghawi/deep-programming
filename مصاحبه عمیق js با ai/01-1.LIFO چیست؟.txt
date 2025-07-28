@@ -1,0 +1,74 @@
+# LIFO چیست؟  
+
+LIFO مخفف عبارت “Last In, First Out” است.  
+
+هرگاه داده‌ها یا فریم‌های تابع در یک ساختار پشته (Stack) نگهداری شوند، آخرین عنصری که وارد می‌شود (آخرین تابع فراخوانی‌شده) اولین عنصری خواهد بود که از پشته خارج می‌شود.  
+
+مثال ساده در جاوااسکریپت:  
+```javascript
+const stack = [];
+stack.push('A'); // [ 'A' ]
+stack.push('B'); // [ 'A', 'B' ]
+const top = stack.pop(); // top = 'B', حالا stack = [ 'A' ]
+```  
+
+---
+
+## MutationObserver چیست؟  
+
+MutationObserver یک API استاندارد مرورگر است که اجازه می‌دهد تغییرات در ساختار DOM (مثل اضافه یا حذف شدن عناصر، تغییر صفات یا متن عناصر) را به‌صورت ناهم‌زمان مشاهده کنید.  
+
+- ایجاد و کانفیگ:  
+  ```javascript
+  const observer = new MutationObserver((records) => {
+    records.forEach(record => {
+      console.log('نوع تغییر:', record.type);
+    });
+  });
+  observer.observe(targetNode, { childList: true, attributes: true, subtree: true });
+  ```  
+
+- use cases اصلی:  
+  - نظارت بر اضافه یا حذف شدن نودها  
+  - دنبال کردن تغییر attribute یا تغییرات متن  
+  - اجرا کردن منطق دلخواه زمانی که DOM بدون دخالت مستقیم شما تغییر می‌کند  
+
+---
+
+## queueMicrotask چیست؟  
+
+queueMicrotask یک تابع استاندارد برای ثبت callback به‌عنوان یک میکروتسک (microtask) است.  
+
+- وقتی فراخوانی می‌شود، تابع شما بعد از خالی شدن Call Stack اما قبل از اجرای هیچ ماکروتسکی اجرا خواهد شد.  
+- اولویت اجرایی مشابه Promise callbacks دارد، اما بدون نیاز به ساخت یک Promise.  
+
+مثال:  
+```javascript
+console.log('اول');
+
+// ثبت میکروتسک
+queueMicrotask(() => {
+  console.log('داخل queueMicrotask');
+});
+
+Promise.resolve().then(() => {
+  console.log('داخل Promise.then');
+});
+
+console.log('آخر');
+// خروجی:
+// اول
+// آخر
+// داخل queueMicrotask
+// داخل Promise.then
+```  
+
+---
+
+## نکات بیشتر که ممکن است برایت جالب باشد  
+
+- تفاوت عملکرد و کارایی بین queueMicrotask و Promise.then: امکان ثبت میکروتسک بدون overhead ساخت Promise.  
+- محدودیت‌های MutationObserver در بارگذاری سنگین DOM و نکاتی برای بهینه‌سازی نرخ اجرای callback.  
+- آشنایی با سایر روش‌های برنامه‌نویسی واکنشی در جاوااسکریپت مثل IntersectionObserver و ResizeObserver.  
+
+اگر دوست داری مثال‌های پیشرفته‌تر یا مقایسه با Node.js equivalents را ببینیم، خبر بده!

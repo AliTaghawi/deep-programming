@@ -1,0 +1,164 @@
+# Deep Clone چیست و چرا به آن نیاز داریم؟
+
+وقتی یک ساختار دادهٔ تو در تو (شیء یا آرایهٔ چندلایه) در جاوااسکریپت دارید، اگر فقط از شِلَلو کپی (شامل `Object.assign` یا spread) استفاده کنید، زیرآیتم‌های مرجع‌دار (آرایه‌ها، اشیاء دیگر، Map/Set و…) **ارجاع مشترک** می‌گیرند.  
+در نتیجه تغییر روی آن زیرآیتم در هردو کپی و مبدأ اعمال می‌شود.  
+
+Deep Clone دقیقاً تمام لایه‌ها را بازمی‌کند و هر زیرآیتم را **یک شیء/آرایهٔ مستقل** می‌سازد. این‌طوری ساختار کلّاً جداگانه باقی می‌ماند و تغییر هیچ سطحی روی دیگری تأثیر نمی‌گذارد.
+
+---
+
+## ساختار کلی تابع deepClone
+
+برای پیاده‌سازی کاملاً جامع نیاز داریم:
+
+1. تشخیص نوع داده (primitive vs object)  
+2. جلوگیری از حلقه‌های مرجع (circular references)  
+3. پشتیبانی از انواع خاص:  
+   - آرایه (`Array`)  
+   - تاریخ (`Date`)  
+   - عبارات منظم (`RegExp`)  
+   - نقشه و مجموعه (`Map` و `Set`)  
+   - اشیاء معمولی (Plain Object)  
+4. حفظ ساختار prototype و property descriptor  
+5. رجیستر کردن رفرنس‌های اصلی در یک `WeakMap` تا هنگام مواجههٔ دوباره با همان شیء، دوباره clone نکند.
+
+---
+
+## پیاده‌سازی عمیق (نمونه کد)
+
+```javascript
+function deepClone(value, map = new WeakMap()) {
+  // 1. مقادیر اولیه (عدد، رشته، بولین، null، undefined، Symbol)
+  if (value === null || typeof value !== 'object') {
+    return value;
+  }
+
+  // 2. حلقهٔ مرجع: اگر قبلاً دیده‌ایم، همان رفرنس قبلی را برمی‌گردانیم
+  if (map.has(value)) {
+    return map.get(value);
+  }
+
+  let result;
+
+  // 3. آرایه
+  if (Array.isArray(value)) {
+    result = [];
+    map.set(value, result);
+    value.forEach((item, i) => {
+      result[i] = deepClone(item, map);
+    });
+    return result;
+  }
+
+  // 4. Date
+  if (value instanceof Date) {
+    return new Date(value.getTime());
+  }
+
+  // 5. RegExp
+  if (value instanceof RegExp) {
+    const flags = value.flags;
+    return new RegExp(value.source, flags);
+  }
+
+  // 6. Map
+  if (value instanceof Map) {
+    result = new Map();
+    map.set(value, result);
+    value.forEach((v, k) => {
+      result.set(deepClone(k, map), deepClone(v, map));
+    });
+    return result;
+  }
+
+  // 7. Set
+  if (value instanceof Set) {
+    result = new Set();
+    map.set(value, result);
+    value.forEach(v => {
+      result.add(deepClone(v, map));
+    });
+    return result;
+  }
+
+  // 8. Function: معمولاً clone نمی‌کنیم، فقط ارجاع می‌دهیم
+  if (typeof value === 'function') {
+    return value;
+  }
+
+  // 9. اشیاء معمولی: حفظ prototype و property descriptor
+  result = Object.create(Object.getPrototypeOf(value));
+  map.set(value, result);
+  Reflect.ownKeys(value).forEach(key => {
+    const desc = Object.getOwnPropertyDescriptor(value, key);
+    if (desc.get || desc.set) {
+      // انتقال getter/setter
+      Object.defineProperty(result, key, desc);
+    } else {
+      result[key] = deepClone(value[key], map);
+    }
+  });
+  return result;
+}
+```
+
+---
+
+## طرز استفاده
+
+```javascript
+// یک ساختار تو در تو می‌سازیم
+const original = {
+  num: 42,
+  text: 'hello',
+  nested: {
+    arr: [1, 2, { deep: 'value' }],
+    date: new Date(),
+    regex: /test/gi,
+  },
+  map: new Map([['key', { x: 1 }]]),
+  set: new Set([1, 2, 3]),
+  func() { return this.num; },
+};
+
+// کپی عمیق می‌گیریم
+const clone = deepClone(original);
+
+// تست استقلال
+clone.nested.arr[2].deep = 'changed';
+console.log(original.nested.arr[2].deep); // 'value'  ← روی مبدأ تأثیری نداشت
+```
+
+---
+
+## نکات عملکردی و Memory Overhead
+
+- برای ساختارهای بسیار بزرگ یا با عمق زیاد، **پیاده‌سازی بازگشتی** ممکن است منجر به **stack overflow** یا کندی شود.  
+- `WeakMap` کمک می‌کند جلوی لو رفتن مبدأ در حافظه را بگیریم (جمع‌آوری توسط GC امکان‌پذیر می‌ماند).  
+- اگر نیازی به تمامی قابلیت‌های بالا ندارید، روش ساده‌تر (مثل `JSON.parse/JSON.stringify`) بسیار سریع‌تر و کم‌مصرف‌تر عمل می‌کند.
+
+---
+
+## روش‌های جایگزین و کتابخانه‌ها
+
+- `lodash.cloneDeep`  
+- `rfdc` (Really Fast Deep Clone)  
+- `structuredClone` (متد بومی جدید در برخی مرورگرها و Node.js)
+
+```javascript
+// با lodash
+import cloneDeep from 'lodash/cloneDeep';
+const clone = cloneDeep(original);
+```
+
+هرکدام ویژگی‌های خاص خود را دارند و سرعت/پشتیبانی متفاوتی ارائه می‌کنند.
+
+---
+
+## نتیجه‌گیری
+
+1. برای کپی‌برداری یک‌لایه از `Object.assign` یا spread استفاده کنید.  
+2. برای کپی سادهٔ دادهٔ غیرمرجع‌دار یا بدون circular، از `JSON.parse/JSON.stringify` بهره ببرید.  
+3. اگر دادهٔ پیچیده و متنوع (Date, RegExp, Map/Set, circular) دارید، پیاده‌سازی سفارشی deepClone یا کتابخانه‌های بهینه را انتخاب کنید.  
+
+با این توضیحات اکنون می‌توانید متناسب با نیاز پروژه‌ات، روش مناسب برای clone کردن داده‌ها را انتخاب و پیاده‌سازی کنی.

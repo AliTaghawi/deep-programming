@@ -1,0 +1,163 @@
+## سوال شماره ۲
+
+توضیح بده مکانیزم ارث‌بری (Inheritance) در جاوااسکریپت چطوری کار می‌کند؟  
+- تفاوت میان prototype و __proto__ چیست؟  
+- کلاس‌ها (class) چگونه روی همین پروتوتایپ‌ها سوار شده‌اند؟  
+- وقتی یک پراپرتی در آبجکت یافت نمی‌شود، مسیر lookup چگونه طی می‌شود؟  
+- چه راهکارهایی برای پیاده‌سازی multiple inheritance یا mixins در جاوااسکریپت وجود دارد؟
+
+وقتی جواب دادی، من درصد عمق و دقت پاسخ‌ت رو می‌دم، نقاط قوت و ضعف‌تو می‌شمارم و در نهایت یک جواب کامل و عمیق برای مرجع ارائه می‌کنم. آماده‌ای؟
+
+
+/////////////////////////////
+# پاسخ کامل به سوال دوم: مکانیزم ارث‌بری در جاوااسکریپت
+
+## 1. تفاوت میان `prototype` و `__proto__`
+
+  
+هر تابع سازنده (constructor) در جاوااسکریپت یک خصوصیت ایستا به نام `prototype` دارد. وقتی شما با آن تابع یک شیء جدید می‌سازید (`new MyCtor()`)، آن شیء خود یک لینک داخلی به آن `prototype` دارد که در `__proto__` ذخیره می‌شود.
+
+  
+- `MyCtor.prototype`  
+  - یک شیء ساده است که می‌توانید روی آن متد یا پراپرتی قرار دهید تا همه نمونه‌های ساخته‌شده به آن دسترسی داشته باشند.  
+  - در زمان تعریف تابع سازنده مقداردهی می‌شود و قابل تغییر است.  
+
+- `obj.__proto__`  
+  - یک ارجاع (reference) به شیء `prototype` تابع سازنده‌ای است که آن شیء را ساخته.  
+  - در استاندارد ES6 از `Object.getPrototypeOf(obj)` به‌جای دسترسی مستقیم به `__proto__` استفاده می‌شود.  
+
+```javascript
+function Person(name) {
+  this.name = name;
+}
+
+Person.prototype.greet = function() {
+  console.log(`سلام، من ${this.name} هستم`);
+};
+
+const p = new Person('سعيد');
+
+// p.__proto__ === Person.prototype  => true
+// Object.getPrototypeOf(p) === Person.prototype  => true
+```
+
+---
+
+## 2. کلاس‌ها (class) و پروتوتایپ‌ها
+
+  
+کلمه‌کلیدی `class` در ES6 صرفاً روی `prototype` تابع سازنده یک لایهٔ جدید سینتکس می‌کشد و در زیرِ کاپوت همچنان از مکانیزم پروتوتایپی استفاده می‌کند.
+
+  
+- تعریف کلاس با `class`  
+  ```javascript
+  class Animal {
+    constructor(type) {
+      this.type = type;
+    }
+    speak() {
+      console.log(`${this.type} صدا می‌کند`);
+    }
+  }
+  ```
+
+- تبدیل به تابع سازنده  
+  - `class Animal { … }` معادل است با:
+    ```javascript
+    function Animal(type) {
+      this.type = type;
+    }
+    Animal.prototype.speak = function() {
+      console.log(`${this.type} صدا می‌کند`);
+    };
+    ```
+
+- ارث‌بری با `extends`  
+  ```javascript
+  class Dog extends Animal {
+    constructor(name) {
+      super('سگ');
+      this.name = name;
+    }
+    speak() {
+      super.speak();
+      console.log(`${this.name} پارس می‌کند`);
+    }
+  }
+  ```
+
+---
+
+## 3. مسیر lookup برای پراپرتی‌ها
+
+  
+وقتی به یک پراپرتی در شیء دسترسی پیدا می‌کنید، جاوااسکریپت مراحل زیر را طی می‌کند:
+
+1. بررسی می‌کند آیا آن پراپرتی در خود شیء (`own property`) وجود دارد؟  
+2. در صورت عدم وجود، لینک `__proto__` (یا `Object.getPrototypeOf`) را دنبال می‌کند و در آن شیء می‌جوید.  
+3. این فرایند تا آخرین نقطهٔ زنجیره پروتوتایپ (جایی که `__proto__ === null`) ادامه می‌یابد.  
+4. اگر هیچ‌جا پیدا نشد، مقدار `undefined` بازمی‌گردد.
+
+```javascript
+const A = { x: 1 };
+const B = Object.create(A);
+const C = Object.create(B);
+console.log(C.x); // 1  (یافت در A)
+```
+
+---
+
+## 4. چندریسمانی (Multiple Inheritance) و Mixins
+
+  
+جاوااسکریپت به‌صورت پیش‌فرض از چندریسمانی پشتیبانی نمی‌کند، اما می‌توان الگوهای مختلفی برای ترکیب ویژگی‌ها (mixins) استفاده کرد.
+
+  
+- **Mixin ساده با Object.assign**  
+  ```javascript
+  const canEat = {
+    eat() { console.log('در حال خوردن'); }
+  };
+  const canWalk = {
+    walk() { console.log('در حال راه رفتن'); }
+  };
+
+  class Person {}
+  Object.assign(Person.prototype, canEat, canWalk);
+
+  const p = new Person();
+  p.eat(); // در حال خوردن
+  p.walk(); // در حال راه رفتن
+  ```
+
+- **Factory Function برای ترکیب کلاس‌ها**  
+  ```javascript
+  const MixinRunner = Base => class extends Base {
+    run() { console.log('در حال دویدن'); }
+  };
+
+  class Animal {}
+  class Dog extends MixinRunner(Animal) {}
+  ```
+
+- **Delegation/Composition**  
+  - ایجاد اشیاء کوچکتر با مسئولیت مشخص و ارجاع دادن یا فراخوانی متدها از طریق پراپرتی  
+
+---
+
+## جمع‌بندی
+
+  
+• `prototype` متعلق به تابع سازنده است و محل تعریف متدهای مشترک.  
+  
+• `__proto__` لینک داخلی شیء به شیء پروتوتایپ تابع سازنده.  
+  
+• `class` صرفاً شکرپاشی سینتکسی روی همان مکانیسم پروتوتایپ است.  
+  
+• مسیر lookup با جستجوی آبجکت اصلی و سپس پیمایش زنجیره پروتوتایپ انجام می‌شود.  
+  
+• برای پیاده‌سازی چندریسمانی، از mixinها با `Object.assign`، higher-order class یا ترکیب اشیاء استفاده می‌شود.  
+
+---
+
+برو سراغ سوال بعدی یا اگر نکته‌ای برای این بخش داری بگو تا عمیق‌تر بررسی کنیم!

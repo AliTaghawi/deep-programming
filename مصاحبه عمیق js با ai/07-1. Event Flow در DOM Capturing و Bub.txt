@@ -1,0 +1,67 @@
+# Event Flow در DOM: Capturing و Bubbling
+
+در جاوااسکریپت وقتی یک رویداد (مثل `click`) در یک عنصر اتفاق می‌افتد، مرورگر آن را در سه فاز منتقل می‌کند:
+
+1. **Capturing**: از ریشهٔ سند به سمت عنصر هدف  
+2. **Target**: در خود عنصر هدف  
+3. **Bubbling**: از عنصر هدف به سمت ریشهٔ سند  
+
+با این دو مفهوم آشنا می‌شویم:
+
+---
+
+## بابلینگ (Event Bubbling)
+
+- وقتی یک رویداد در عنصر هدف اجرا شد، ابتدا در **فاز Target** فراخوانی می‌شود.  
+- سپس به سمت بالا (پدرها) منشعب می‌شود تا به ریشه برسد.  
+- در هر عنصر والد اگر listener با تنظیمات پیش‌فرض ثبت شده باشد (capture: false)، اجرا می‌گردد.
+
+مثال ساده:
+```html
+<div id="parent">
+  <button id="child">کلیک کن</button>
+</div>
+<script>
+  const parent = document.getElementById('parent');
+  const child = document.getElementById('child');
+
+  child.addEventListener('click', () => console.log('child clicked'));
+  parent.addEventListener('click', () => console.log('parent clicked'));
+  // کلیک روی دکمه: 
+  // 1. child clicked
+  // 2. parent clicked
+</script>
+```
+
+---
+
+## کپچرینگ (Event Capturing)
+
+- در این فاز رویداد از **ریشه**ٔ سند به سمت **عنصر هدف** حرکت می‌کند.  
+- برای شنیدن رویداد در این مسیر باید listener را با `{ capture: true }` ثبت کنید.  
+- اجرا در فاز گرفتن (capture) قبل از فاز Target و Bubbling انجام می‌شود.
+
+مثال:
+```javascript
+parent.addEventListener('click', () => console.log('parent capture'), { capture: true });
+child.addEventListener('click', () => console.log('child clicked'));
+```
+- کلیک روی `child`:  
+  1. `parent capture`  ← فاز Capturing  
+  2. `child clicked`  ← فاز Target  
+  3. (اگر listener والد غیر Capture بود) فاز Bubbling  
+
+---
+
+## مقایسه کلی
+
+| ویژگی                  | Capturing (`capture: true`)      | Bubbling (`capture: false`)       |
+|-------------------------|----------------------------------|-----------------------------------|
+| جهت جریان              | از ریشه به مقصد                 | از مقصد به ریشه                  |
+| ترتیب اجرا              | قبل از Target                    | بعد از Target                     |
+| تنظیم در addEventListener | `{ capture: true }`            | پیش‌فرض یا `{ capture: false }`  |
+| موارد کاربرد            | پیش‌پردازش رویداد قبل رسیدن به هدف | مدیریت کلیک‌ها روی والدها       |
+
+---
+
+با این توضیح، می‌توانی تصمیم بگیری که رویدادها را در کدام فاز بگیری تا کنترل بهتری روی جریان اجرای آنها داشته باشی.

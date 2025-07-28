@@ -1,0 +1,94 @@
+# constructor در کلاس‌های ES6
+
+وقتی یک کلاس در جاوااسکریپت تعریف می‌شود، متد `constructor` مسئول ایجاد و مقداردهی اولیهٔ نمونه (instance) آن کلاس است.  
+
+  
+هر بار که با کلیدواژه `new` یک شیء از کلاس می‌سازید، این متد اجرا می‌شود.  
+
+  
+درون `constructor` معمولاً:  
+- مقادیر پراپرتی‌های نمونه (`this.property`) ست می‌شوند  
+- هر منطق اولیه‌سازی (validation، مقداردهی پیش‌فرض) انجام می‌گیرد  
+
+  
+مثال:
+```javascript
+class Person {
+  constructor(name, age) {
+    this.name = name;
+    this.age = age;
+  }
+}
+const p = new Person('Seyyed', 30);
+console.log(p.name); // 'Seyyed'
+```
+
+---
+
+# super در کلاس‌های ارث‌بری
+
+وقتی یک کلاس از کلاس دیگری ارث می‌برد (`extends`)، با کلیدواژهٔ `super` می‌توان به موارد زیر دسترسی پیدا کرد:
+
+  
+1. فراخوانی سازندهٔ کلاس والد  
+2. دسترسی به متدها یا پراپرتی‌های والد داخل متدهای کلاس فرزند  
+
+  
+## ۱. فراخوانی سازندهٔ والد
+
+در یک کلاس فرزند، قبل از دسترسی به `this` باید حتماً `super(...)` را صدا بزنید. این فراخوانی، کار مشابه اجرای تابع سازندهٔ والد را انجام می‌دهد و زمینهٔ `this` را آماده می‌کند.
+
+```javascript
+class Animal {
+  constructor(species) {
+    this.species = species;
+  }
+}
+
+class Dog extends Animal {
+  constructor(name) {
+    super('Canine');    // فراخوانی سازندهٔ Animal با species = 'Canine'
+    this.name = name;   // حالا this قابل‌استفاده است
+  }
+}
+
+const d = new Dog('Rex');
+console.log(d.species, d.name); // 'Canine' 'Rex'
+```
+
+  
+## ۲. دسترسی به متدهای والد
+
+  
+برای تماس با نسخهٔ والدِ یک متد (override شده) از `super.methodName(...)` استفاده می‌کنیم:
+
+```javascript
+class Logger {
+  log(msg) {
+    console.log('Log:', msg);
+  }
+}
+
+class TimestampLogger extends Logger {
+  log(msg) {
+    super.log(new Date().toISOString() + ' ' + msg);
+  }
+}
+
+const tl = new TimestampLogger();
+tl.log('Hello'); // خروجی: Log: 2023-07-24T... Hello
+```
+
+---
+
+# نکات کلیدی
+
+  
+- در کلاس فرزند، اگر از `constructor` استفاده کنید، حتماً باید قبل از هر دسترسی به `this`، `super()` را صدا بزنید.  
+- فراخوانی `super` به‌تنهایی بدون پارامتر هم مجاز است، ولی معمولاً والد ورودی‌هایی نیاز دارد.  
+- می‌توانید در متدهای عادی (غیر `constructor`) هم از `super` برای دسترسی به متدهای والد بهره ببرید.  
+- `super` در کلاس‌های بدون ارث‌بری (`extends`) تعریف نشده و خطا ایجاد می‌کند.  
+
+---
+
+اگر مایل باشی مثال‌های بیشتری از چندسطحی‌سازی کلاس‌ها یا نکته‌های پیشرفته مثل پراپرتی‌های استاتیک و `super` در آنها ببینیم، خبر بده!

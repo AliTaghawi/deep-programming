@@ -1,0 +1,149 @@
+سؤال شماره ۱۸ (همون سوال 2 و 8 هست با کمی تغییر)
+
+توضیح بده مفهوم وراثت (Inheritance) در جاوااسکریپت چگونه با استفاده از Prototype Chain پیاده‌سازی می‌شود. در پاسخ‌ات حتماً به این نکات بپرداز:
+
+- ساختار داخلی [[Prototype]] و ارتباطش با `__proto__`  
+- نحوهٔ جستجوی propertyها در Prototype Chain  
+- ایجاد وراثت با Constructor Function و افزودن متد روی `Constructor.prototype`  
+- استفاده از `Object.create()` برای تعریف شیء با پروتوتایپ مشخص  
+- سینتکس کلاس‌های ES6 (`class`/`extends`/`super`) و نقش آن در پشت صحنه  
+- بررسی عملکرد `instanceof` و `isPrototypeOf`  
+- نکات مهم (مثل shared state در پروتوتایپ و override کردن متدها)
+
+
+
+
+------------------////////////////////////
+
+# ارث‌بری (Inheritance) در جاوااسکریپت با Prototype Chain
+
+JavaScript از یک سیستم ارث‌بری مبتنی بر پروتوتایپ (Prototype-based) استفاده می‌کند. در این مدل، اشیاء می‌توانند از اشیای دیگر ارث ببرند و پراپرتی‌ها و متدها را به اشتراک بگذارند.
+
+---
+
+## ۱. ساختار داخلی [[Prototype]] و `__proto__`
+
+- هر شیء در جاوااسکریپت یک صفت داخلی دارد به نام `[[Prototype]]` که اشاره به یک شیء دیگر (پروتوتایپ) دارد.  
+- `__proto__` یک دسترسی عمومی (non-standard اما پشتیبانی‌شده) به `[[Prototype]]` است.
+
+مثال:
+```javascript
+const parent = { a: 1 };
+const child = {};
+child.__proto__ = parent;
+console.log(child.a); // 1
+```
+
+---
+
+## ۲. جستجوی property در Prototype Chain
+
+- وقتی به `child.a` دسترسی پیدا می‌شود:
+  1. ابتدا در خود `child` جستجو می‌کند.
+  2. اگر یافت نشد، به `child.[[Prototype]]` (یعنی `parent`) مراجعه می‌کند.
+  3. اگر آنجا نباشد، بالاتر می‌رود تا به `Object.prototype` و سپس `null` برسد.
+- اگر هیچ‌جا پیدا نشود، مقدار `undefined` بازگردانده می‌شود.
+
+---
+
+## ۳. وراثت با Constructor Function
+
+با Constructor Function و صفت `prototype` می‌توانیم متدها و پراپرتی‌های مشترک را تعریف کنیم:
+
+```javascript
+function Person(name) {
+  this.name = name;
+}
+Person.prototype.greet = function() {
+  console.log(`Hello, I'm ${this.name}`);
+};
+
+const alice = new Person('Alice');
+alice.greet(); // Hello, I'm Alice
+console.log(alice.__proto__ === Person.prototype); // true
+```
+
+- `new Person()` یک شیء جدید می‌سازد، `this.__proto__` را به `Person.prototype` تنظیم می‌کند و تابع سازنده را با `this` جدید فراخوانی می‌کند.
+
+---
+
+## ۴. استفاده از `Object.create()`
+
+`Object.create(proto)` یک شیء جدید با `[[Prototype]]` مشخص‌شده می‌سازد:
+
+```javascript
+const proto = { greet() { console.log('hello'); } };
+const obj = Object.create(proto);
+obj.greet(); // 'hello'
+console.log(Object.getPrototypeOf(obj) === proto); // true
+```
+
+---
+
+## ۵. سینتکس کلاس‌های ES6
+
+کلاس‌های ES6 در پشت‌صحنه از همان مکانیزم پروتوتایپ استفاده می‌کنند:
+
+```javascript
+class Car {
+  constructor(type) {
+    this.type = type;
+  }
+  drive() {
+    console.log(`${this.type} is driving`);
+  }
+}
+
+class BMW extends Car {
+  constructor(type, name) {
+    super(type);
+    this.name = name;
+  }
+  show() {
+    console.log(`BMW ${this.name} of type ${this.type}`);
+  }
+}
+
+const myCar = new BMW('sedan', 'X5');
+myCar.drive(); // sedan is driving
+myCar.show();  // BMW X5 of type sedan
+```
+
+- `extends` پروتوتایپ فرزند را به پروتوتایپ والد متصل می‌کند.
+- `super()` در کانستراکتور فرزند، کانستراکتور والد را با `this` جاری فراخوانی می‌کند.
+
+---
+
+## ۶. `instanceof` و `isPrototypeOf`
+
+- `instanceof` بررسی می‌کند که آیا یک شیء در Prototype Chain تابع سازنده قرار دارد:
+  ```javascript
+  console.log(myCar instanceof BMW); // true
+  console.log(myCar instanceof Car); // true
+  ```
+
+- `isPrototypeOf` یک متد روی شیء پروتوتایپ است:
+  ```javascript
+  console.log(BMW.prototype.isPrototypeOf(myCar)); // true
+  console.log(Car.prototype.isPrototypeOf(myCar)); // true
+  ```
+
+---
+
+## ۷. نکات مهم
+
+- Shared State: اگر روی `prototype` یک متغیر مرجع (مثل آرایه یا شیء) تعریف کنید، تمام نمونه‌ها به آن رفرنس مشترک دارند:
+  ```javascript
+  function A() {}
+  A.prototype.arr = [];
+  const x = new A();
+  const y = new A();
+  x.arr.push(1);
+  console.log(y.arr); // [1]
+  ```
+
+- Override: متدهای پروتوتایپ می‌توانند توسط نمونه‌ها یا کلاس‌های فرزند بازنویسی شوند.  
+
+---
+
+با این ساختار، نحوهٔ پیاده‌سازی وراثت در جاوااسکریپت، مقدمه‌ای بر درک بهتر Prototype Chain و کلاس‌های ES6 را فراهم می‌کند.

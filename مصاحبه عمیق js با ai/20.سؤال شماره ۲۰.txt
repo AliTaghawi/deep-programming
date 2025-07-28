@@ -1,0 +1,198 @@
+# سؤال شماره ۲۰
+
+توضیح بده تفاوت shallow copy و deep copy در جاوااسکریپت چیست و هر کدام چگونه پیاده‌سازی می‌شوند. در پاسخ‌ات حتماً به نکات زیر بپرداز:
+
+- عملکرد و محدودیت‌های Object.assign و spread operator برای shallow copy  
+- روش JSON.parse/JSON.stringify و محدودیت‌های آن برای انواع داده خاص  
+- پیاده‌سازی یک تابع deepClone بازگشتی (نگهداری ساختار‌های تودرتو)  
+- برخورد با انواع داده غیرعادی (Date, RegExp, Map/Set, توابع)  
+- ملاحظات عملکردی و memory overhead  
+- مواقع مناسب استفاده از هر روش  
+
+منتظرم توضیح تو رو بشنوم!
+
+
+
+-----------------////////////////////////
+
+# تفاوت Shallow Copy و Deep Copy در جاوااسکریپت
+
+در جاوااسکریپت وقتی می‌خواهیم از یک شیء یا آرایه **کپی** بگیریم، دو رویکرد اصلی داریم:
+
+- **Shallow Copy** (کپی سطحی): تنها لایهٔ اول ساختار را کپی می‌کند، اما زیرشیء‌ها همچنان به مبدأ ارجاع می‌دهند.  
+- **Deep Copy** (کپی عمیق): تمام لایه‌های تو در تو را بازمی‌کند و یک ساختار کاملاً مستقل می‌سازد.
+
+---
+
+## ۱. Shallow Copy
+
+### 1.1 Object.assign()
+
+```javascript
+const obj = { a: 1, nested: { b: 2 } };
+const copy = Object.assign({}, obj);
+```
+
+- **نحوه کار**:  
+  - مقادیر primitive (عدد، رشته، بولین) را مقداردهی می‌کند.  
+  - برای هر آدرس مرجع‌دار (آرایه، شیء)، صرفاً ارجاع (reference) را کپی می‌کند.
+
+- **محدودیت‌ها**:  
+  - `copy.nested === obj.nested` → `true`  
+  - تغییر در `copy.nested.b`، مقدار `obj.nested.b` را هم تحت تأثیر قرار می‌دهد.
+
+### 1.2 Spread Operator (`{...}` / `[...]`)
+
+```javascript
+const arr = [1, { x: 10 }];
+const arrCopy = [...arr];
+```
+
+- همان رفتار `Object.assign` برای اشیاء و آرایه‌ها را دارد.  
+- زیرآیتم‌های مرجع‌دار به اشتراک گذاشته می‌شوند.
+
+---
+
+## ۲. Deep Copy
+
+### 2.1 JSON.parse / JSON.stringify
+
+```javascript
+const deep = JSON.parse(JSON.stringify(obj));
+```
+
+- **مزایا**  
+  - پیاده‌سازی ساده و مختصر.  
+  - برای داده‌های ساده (فقط primitive و آرایه/شیء) مناسب است.
+
+- **محدودیت‌ها**  
+  - توابع (Functions) حذف می‌شوند.  
+  - `Date` به رشتهٔ ISO تبدیل می‌شود (مثلاً `"2025-07-24T..."`).  
+  - `RegExp` به رشته تبدیل می‌شود.  
+  - `undefined`, `Symbol`,‌ `BigInt` حذف می‌شوند.  
+  - `Map`/`Set` و انواع خاص (TypedArray) از دست می‌روند.  
+  - در مواجهه با **دایره‌های مرجع** (circular references) خطا می‌دهد.
+
+### 2.2 پیاده‌سازی تابع Deep Clone بازگشتی
+
+```javascript
+function deepClone(value, map = new WeakMap()) {
+  // حالت‌های پایه (primitive)
+  if (value === null || typeof value !== 'object') {
+    return value;
+  }
+  // جلوگیری از دور باطل (circular)
+  if (map.has(value)) {
+    return map.get(value);
+  }
+
+  let result;
+  // آرایه
+  if (Array.isArray(value)) {
+    result = [];
+    map.set(value, result);
+    value.forEach((item, i) => {
+      result[i] = deepClone(item, map);
+    });
+    return result;
+  }
+
+  // Date
+  if (value instanceof Date) {
+    return new Date(value);
+  }
+
+  // RegExp
+  if (value instanceof RegExp) {
+    const flags = value.flags;
+    return new RegExp(value.source, flags);
+  }
+
+  // Map
+  if (value instanceof Map) {
+    result = new Map();
+    map.set(value, result);
+    value.forEach((v, k) => {
+      result.set(deepClone(k, map), deepClone(v, map));
+    });
+    return result;
+  }
+
+  // Set
+  if (value instanceof Set) {
+    result = new Set();
+    map.set(value, result);
+    value.forEach(v => {
+      result.add(deepClone(v, map));
+    });
+    return result;
+  }
+
+  // Function (کپی ارجاعی؛ نمی‌توان محتوای تابع را clone کرد)
+  if (typeof value === 'function') {
+    return value;
+  }
+
+  // شیء معمولی
+  result = Object.create(Object.getPrototypeOf(value));
+  map.set(value, result);
+  Reflect.ownKeys(value).forEach(key => {
+    const desc = Object.getOwnPropertyDescriptor(value, key);
+    if (desc.get || desc.set) {
+      Object.defineProperty(result, key, desc);
+    } else {
+      result[key] = deepClone(value[key], map);
+    }
+  });
+  return result;
+}
+```
+
+- از `WeakMap` برای تشخیص و رفع **دایره‌های مرجع** استفاده می‌کنیم.  
+- انواع مختلف را به‌صورت جداگانه هندل می‌کنیم.
+
+---
+
+## ۳. برخورد با انواع داده‌ٔ خاص
+
+| نوع داده          | Shallow Copy                  | Deep Copy                            |
+|-------------------|--------------------------------|--------------------------------------|
+| `Date`            | ارجاع مشترک                   | `new Date(oldDate)`                  |
+| `RegExp`          | ارجاع مشترک                   | `new RegExp(oldReg.source, flags)`   |
+| `Map` / `Set`     | ارجاع مشترک                   | تکرار عناصر و clone کلید/مقدارها     |
+| `Function`        | ارجاع مشترک                   | صرفاً نگهداری همان تابع (immutable) |
+| Typed Arrays      | ارجاع مشترک                   | ساخت ArrayBuffer جدید و copy محتوا   |
+
+---
+
+## ۴. ملاحظات عملکردی و Memory Overhead
+
+- **Shallow Copy**:  
+  - سریع و کم‌هزینه.  
+  - حافظهٔ اضافی کم.  
+- **Deep Copy**:  
+  - هزینهٔ پردازشی بالا، مخصوصاً برای ساختارهای بزرگ یا تو در تو  
+  - مصرف حافظهٔ بیشتر به ازای هر نود درخت‌وار  
+
+اگر ساختار داده کم‌عمق باشد یا زیرشیءها را به اشتراک گذاشته کار می‌کنند (immutable)، shallow کافی است. در غیر این صورت Deep Clone استفاده کنید.
+
+---
+
+## ۵. زمان مناسب استفاده
+
+- **Object.assign / spread**  
+  - وقتی مطمئنید زیرشیءها تغییر نمی‌کنند یا ساختار فقط یک لایه دارد.  
+- **JSON.parse/JSON.stringify**  
+  - برای داده‌های ساده (بدون تاریخ، تابع، ساختار دایره‌ای).  
+- **Deep Clone سفارشی**  
+  - وقتی نیاز به پشتیبانی کامل از انواع داده‌ها و جلوگیری از حلقه‌های مرجع دارید.  
+
+---
+
+با این راهکارها می‌توانی هر موقع که نیاز به کپی‌برداری دقیق از اشیاء یا آرایه‌ها داشتی، روش مناسب را انتخاب کنی.  
+
+  
+**اطلاعات بیشتر که ممکن است برایت جالب باشد**  
+- پیاده‌سازی ویدجت‌هایی با داده‌های mutable/immutable در React یا Redux  
+- بهره‌گیری از کتابخانه‌های optimized مثل `lodash.cloneDeep`  
+- الگوهای طراحی برای مدیریت state بدون deep clone مداوم (مثل normalization و flat data structures)  
