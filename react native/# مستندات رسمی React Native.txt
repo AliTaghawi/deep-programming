@@ -1,0 +1,61 @@
+# مستندات رسمی React Native
+
+برای یادگیری React Native از رفرنس‌های اصلی و معتبر استفاده کن تا همیشه به‌روز باشی و با بهترین شیوه‌ها آشنا شوی.
+
+---
+
+## مسیر یادگیری در مستندات
+
+1. شروع سریع (Getting Started)  
+   - انتخاب Expo CLI یا React Native CLI  
+   - راه‌اندازی پروژه جدید و اجرای اولین اپ  
+2. آموزش گام به گام (Tutorial: Building Projects)  
+   - ساخت اولین کامپوننت  
+   - مدیریت State و Props  
+3. یادگیری اصول پایه (Learn the Basics)  
+   - View, Text, Image, ScrollView  
+   - استایل‌دهی با Flexbox  
+   - Hooks مثل useState و useEffect  
+4. راهنماهای تخصصی (Guides)  
+   - ناوبری با React Navigation  
+   - دسترسی به سخت‌افزار و Native Modules  
+   - بهینه‌سازی عملکرد و فعال‌سازی Hermes  
+5. مستندات API (API Reference)  
+   - تمام کامپوننت‌ها و ماژول‌های داخلی  
+   - مثال‌های کاربردی برای هر متد  
+
+---
+
+## لینک‌های کلیدی
+
+- مستندات رسمی React Native  
+  https://reactnative.dev/docs/getting-started  
+
+- مخزن گیت‌هاب React Native  
+  https://github.com/facebook/react-native  
+
+- Docs Expo (برای شروع سریع با Expo)  
+  https://docs.expo.dev/  
+
+- React Navigation  
+  https://reactnavigation.org/docs/getting-started  
+
+- AsyncStorage (ذخیره‌سازی محلی)  
+  https://react-native-async-storage.github.io/async-storage/  
+
+---
+
+## منابع فارسی و تکمیلی
+
+- وب‌سایت React Native ایران  
+  https://reactnative.ir/  
+
+- مقاله «شروع کار با React Native» در بلاگ فرادرس  
+  https://faradars.org/courses/...  
+
+- دوره‌های ویدیویی یودمی و فرانت‌اند مسترز  
+- کانال یوتیوب React Native School  
+
+---
+
+حالا از بین بخش‌های بالا کدام قسمت برات اولویت داره تا عمیق‌تر بریم؟
